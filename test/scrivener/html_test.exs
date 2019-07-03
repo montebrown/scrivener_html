@@ -314,6 +314,19 @@ defmodule Scrivener.HTMLTest do
       assert Phoenix.HTML.safe_to_string(html) ==
                "<nav><ul class=\"pagination\"><li class=\"active\"><a class=\"\">1</a></li><li class=\"\"><a class=\"\" href=\"?q[name]=joe&amp;page=2\" rel=\"next\">2</a></li><li class=\"\"><a class=\"\" href=\"?q[name]=joe&amp;page=2\" rel=\"next\">&gt;&gt;</a></li></ul></nav>"
     end
+
+    test "renders 'phx-click' and 'phx-value' attributes when live_view: true" do
+      html =
+        HTML.pagination_links(%Page{total_pages: 2, page_number: 2},
+          live_view: true
+        )
+
+      assert Phoenix.HTML.safe_to_string(html) ==
+               """
+               <nav><ul class=\"pagination\"><li class=\"\"><a class=\"\" href=\"#\" phx-click="change_page" phx-value=\"1\" rel=\"prev\">&lt;&lt;</a></li><li class=\"\"><a class=\"\" href=\"#\" phx-click="change_page" phx-value=\"1\" rel=\"prev\">1</a></li><li class=\"active\"><a class=\"\">2</a></li></ul></nav>
+               """
+               |> String.trim_trailing()
+    end
   end
 
   describe "Phoenix conn()" do

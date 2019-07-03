@@ -4,6 +4,7 @@ defmodule Scrivener.HTML do
   @view_styles [:bootstrap, :semantic, :foundation, :bootstrap_v4, :materialize, :bulma]
   @raw_defaults [
     distance: 5,
+    live_view: false,
     next: ">>",
     previous: "<<",
     first: true,
@@ -204,7 +205,7 @@ defmodule Scrivener.HTML do
     content_tag :nav do
       content_tag :ul, class: "pagination" do
         raw_pagination_links(paginator, params)
-        |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, :bootstrap))
+        |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, params, :bootstrap))
       end
     end
   end
@@ -222,7 +223,9 @@ defmodule Scrivener.HTML do
     content_tag :nav, "aria-label": "Page navigation" do
       content_tag :ul, class: "pagination" do
         raw_pagination_links(paginator, params)
-        |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, :bootstrap_v4))
+        |> Enum.map(
+          &page(&1, url_params, args, page_param, path, paginator, params, :bootstrap_v4)
+        )
       end
     end
   end
@@ -239,7 +242,7 @@ defmodule Scrivener.HTML do
 
     content_tag :div, class: "ui pagination menu" do
       raw_pagination_links(paginator, params)
-      |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, :semantic))
+      |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, params, :semantic))
     end
   end
 
@@ -255,7 +258,7 @@ defmodule Scrivener.HTML do
 
     content_tag :ul, class: "pagination", role: "pagination" do
       raw_pagination_links(paginator, params)
-      |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, :foundation))
+      |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, params, :foundation))
     end
   end
 
@@ -271,7 +274,7 @@ defmodule Scrivener.HTML do
 
     content_tag :ul, class: "pagination" do
       raw_pagination_links(paginator, params)
-      |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, :materialize))
+      |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, params, :materialize))
     end
   end
 
@@ -288,16 +291,16 @@ defmodule Scrivener.HTML do
     content_tag :nav, class: "pagination is-centered" do
       content_tag :ul, class: "pagination-list" do
         raw_pagination_links(paginator, params)
-        |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, :bulma))
+        |> Enum.map(&page(&1, url_params, args, page_param, path, paginator, params, :bulma))
       end
     end
   end
 
-  defp page({:ellipsis, true}, url_params, args, page_param, path, paginator, :foundation) do
-    page({:ellipsis, ""}, url_params, args, page_param, path, paginator, :foundation)
+  defp page({:ellipsis, true}, url_params, args, page_param, path, paginator, params, :foundation) do
+    page({:ellipsis, ""}, url_params, args, page_param, path, paginator, params, :foundation)
   end
 
-  defp page({:ellipsis, true}, url_params, args, page_param, path, paginator, style) do
+  defp page({:ellipsis, true}, url_params, args, page_param, path, paginator, params, style) do
     page(
       {:ellipsis, unquote(@raw_defaults[:ellipsis])},
       url_params,
@@ -305,17 +308,27 @@ defmodule Scrivener.HTML do
       page_param,
       path,
       paginator,
+      params,
       style
     )
   end
 
-  defp page({:ellipsis, text}, _url_params, _args, _page_param, _path, paginator, :semantic) do
+  defp page(
+         {:ellipsis, text},
+         _url_params,
+         _args,
+         _page_param,
+         _path,
+         paginator,
+         params,
+         :semantic
+       ) do
     content_tag(:div, safe(text),
       class: link_classes_for_style(paginator, :ellipsis, :semantic) |> Enum.join(" ")
     )
   end
 
-  defp page({:ellipsis, text}, _url_params, _args, _page_param, _path, paginator, style) do
+  defp page({:ellipsis, text}, _url_params, _args, _page_param, _path, paginator, params, style) do
     content_tag(:li, class: li_classes_for_style(paginator, :ellipsis, style) |> Enum.join(" ")) do
       style
       |> ellipsis_tag
@@ -325,7 +338,7 @@ defmodule Scrivener.HTML do
     end
   end
 
-  defp page({text, page_number}, url_params, args, page_param, path, paginator, :semantic) do
+  defp page({text, page_number}, url_params, args, page_param, path, paginator, params, :semantic) do
     params_with_page =
       url_params ++
         case page_number > 1 do
@@ -354,7 +367,7 @@ defmodule Scrivener.HTML do
     end
   end
 
-  defp page({text, page_number}, url_params, args, page_param, path, paginator, style) do
+  defp page({text, page_number}, url_params, args, page_param, path, paginator, params, style) do
     params_with_page =
       url_params ++
         case page_number > 1 do
@@ -363,7 +376,14 @@ defmodule Scrivener.HTML do
         end
 
     content_tag :li, class: li_classes_for_style(paginator, page_number, style) |> Enum.join(" ") do
-      to = apply(path, args ++ [params_with_page])
+      to =
+        case params[:live_view] do
+          true ->
+            "#"
+
+          _ ->
+            apply(path, args ++ [params_with_page])
+        end
 
       if to do
         if active_page?(paginator, page_number) do
@@ -371,11 +391,21 @@ defmodule Scrivener.HTML do
             class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" ")
           )
         else
-          link(safe(text),
-            to: to,
-            rel: Scrivener.HTML.SEO.rel(paginator, page_number),
-            class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" ")
-          )
+          if params[:live_view] do
+            link(safe(text),
+              to: to,
+              rel: Scrivener.HTML.SEO.rel(paginator, page_number),
+              class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" "),
+              phx_click: :change_page,
+              phx_value: page_number
+            )
+          else
+            link(safe(text),
+              to: to,
+              rel: Scrivener.HTML.SEO.rel(paginator, page_number),
+              class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" ")
+            )
+          end
         end
       else
         style
