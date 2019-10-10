@@ -323,7 +323,7 @@ defmodule Scrivener.HTMLTest do
 
       assert Phoenix.HTML.safe_to_string(html) ==
                """
-               <nav><ul class=\"pagination\"><li class=\"\"><a class=\"\" href=\"#\" phx-click="change_page" phx-value=\"1\" rel=\"prev\">&lt;&lt;</a></li><li class=\"\"><a class=\"\" href=\"#\" phx-click="change_page" phx-value=\"1\" rel=\"prev\">1</a></li><li class=\"active\"><a class=\"\">2</a></li></ul></nav>
+               <nav><ul class=\"pagination\"><li class=\"\"><a class=\"\" href=\"#\" phx-click="change_page" phx-value-page=\"1\" rel=\"prev\">&lt;&lt;</a></li><li class=\"\"><a class=\"\" href=\"#\" phx-click="change_page" phx-value-page=\"1\" rel=\"prev\">1</a></li><li class=\"active\"><a class=\"\">2</a></li></ul></nav>
                """
                |> String.trim_trailing()
     end

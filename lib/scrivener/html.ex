@@ -397,7 +397,7 @@ defmodule Scrivener.HTML do
               rel: Scrivener.HTML.SEO.rel(paginator, page_number),
               class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" "),
               phx_click: :change_page,
-              phx_value: page_number
+              phx_value_page: page_number
             )
           else
             link(safe(text),
