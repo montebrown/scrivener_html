@@ -392,12 +392,18 @@ defmodule Scrivener.HTML do
           )
         else
           if params[:live_view] do
-            link(safe(text),
-              to: to,
-              rel: Scrivener.HTML.SEO.rel(paginator, page_number),
-              class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" "),
-              phx_click: :change_page,
-              phx_value_page: page_number
+            link_attrs = if params[:phx_target], do: [phx_target: params[:phx_target]], else: []
+
+            link(
+              safe(text),
+              link_attrs
+              |> Keyword.merge(
+                to: to,
+                rel: Scrivener.HTML.SEO.rel(paginator, page_number),
+                class: link_classes_for_style(paginator, page_number, style) |> Enum.join(" "),
+                phx_click: :change_page,
+                phx_value_page: page_number
+              )
             )
           else
             link(safe(text),
